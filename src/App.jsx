@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
 function App() {
@@ -7,6 +7,34 @@ function App() {
   const [lanterns, setLanterns] = useState([]);
   const [showKisses, setShowKisses] = useState(false);
   const [playingMusic, setPlayingMusic] = useState(false);
+  const [kissCount, setKissCount] = useState(0);
+  const [kissButtonText, setKissButtonText] = useState('Click to Kiss 💋');
+  const [permanentKisses, setPermanentKisses] = useState([]);
+  const [showBigKiss, setShowBigKiss] = useState(false);
+
+  // Add audio ref for music control
+  const audioRef = useRef(null);
+
+  // Add music control function
+  const toggleMusic = () => {
+    if (audioRef.current) {
+      if (playingMusic) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play().catch(error => {
+          console.log('Audio play failed:', error);
+        });
+      }
+      setPlayingMusic(!playingMusic);
+    }
+  };
+
+  // Set audio volume when component mounts
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = 0.3; // Set to 30% volume
+    }
+  }, []);
 
   // Create floating elements
   useEffect(() => {
@@ -32,38 +60,127 @@ function App() {
 
   const releaseLantern = () => {
     const wishes = ['Love', 'Happiness', 'Dreams Come True', 'Forever Together', 'Beautiful Moments', 'Sweet Dreams', 'Endless Joy'];
-    const newLantern = {
-      id: Date.now(),
-      text: wishes[Math.floor(Math.random() * wishes.length)],
-      x: Math.random() * 80 + 10,
-    };
-    setLanterns(prev => [...prev, newLantern]);
     
-    setTimeout(() => {
-      setLanterns(prev => prev.filter(lantern => lantern.id !== newLantern.id));
-    }, 4000);
+    // Create 5 lanterns at once
+    for (let i = 0; i < 5; i++) {
+      const newLantern = {
+        id: Date.now() + i, // Unique ID for each lantern
+        text: wishes[Math.floor(Math.random() * wishes.length)],
+        x: Math.random() * 80 + 10, // Random horizontal position
+        delay: i * 1 // Stagger the animation start times
+      };
+      
+      setTimeout(() => {
+        setLanterns(prev => [...prev, newLantern]);
+        
+        // Remove lantern after animation completes (longer duration now)
+        setTimeout(() => {
+          setLanterns(prev => prev.filter(lantern => lantern.id !== newLantern.id));
+        }, 80000); // 8 seconds to match the new slower animation
+      }, newLantern.delay * 1000);
+    }
   };
 
   const handleSurprise = () => {
     setShowSurprise(true);
-    setTimeout(() => setShowSurprise(false), 3000);
+    // Don't hide the surprise anymore - make it permanent
   };
 
   const sendKisses = () => {
-    setShowKisses(true);
-    setTimeout(() => setShowKisses(false), 3000);
+    const newKissCount = kissCount + 1;
+    setKissCount(newKissCount);
+    
+    if (newKissCount < 10) {
+      // Add permanent kisses to the screen
+      const newKisses = [];
+      for (let i = 0; i < newKissCount * 2; i++) {
+        newKisses.push({
+          id: `${newKissCount}-${i}`,
+          left: Math.random() * 90 + 5,
+          top: Math.random() * 90 + 5,
+          size: Math.random() * 1.5 + 1,
+          rotation: Math.random() * 360
+        });
+      }
+      setPermanentKisses(prev => [...prev, ...newKisses]);
+      
+      // Show temporary overlay effect
+      setShowKisses(true);
+      setTimeout(() => setShowKisses(false), 1000);
+      
+      // Update button text based on kiss count
+      if (newKissCount === 1) {
+        setKissButtonText('One more please 🥺💕');
+      } else if (newKissCount === 2) {
+        setKissButtonText('Can you give one more? 😘💖');
+      } else if (newKissCount < 9) {
+        setKissButtonText('More kisses please! 😚💋');
+      } else if (newKissCount === 9) {
+        setKissButtonText('One more for the magic! ✨💋');
+      }
+    } else if (newKissCount === 10) {
+      // 10th click - clear all small kisses and show big one
+      setPermanentKisses([]);
+      setShowBigKiss(true);
+      setKissButtonText('Too much love? 💕');
+    } else if (newKissCount === 11) {
+      // 11th click - start fading the big kiss
+      setKissButtonText('One more to clear... 🫣✨');
+    } else if (newKissCount === 12) {
+      // 12th click - remove the big kiss completely
+      setShowBigKiss(false);
+      setKissButtonText('All clean! Kiss again? 😘💋');
+      setKissCount(0); // Reset for a new cycle
+    }
   };
 
   return (
     <div className="app">
-      {/* Kiss overlay */}
+      {/* Background music */}
+      <audio 
+        ref={audioRef}
+        loop
+        preload="auto"
+      >
+        <source src="/hbdsong.mp3" type="audio/mpeg" />
+        Your browser does not support the audio element.
+      </audio>
+
+      {/* Permanent kisses overlay */}
+      {permanentKisses.length > 0 && (
+        <div className="permanent-kisses-overlay">
+          {permanentKisses.map(kiss => (
+            <div
+              key={kiss.id}
+              className="permanent-kiss"
+              style={{
+                left: `${kiss.left}%`,
+                top: `${kiss.top}%`,
+                fontSize: `${kiss.size}rem`,
+                transform: `rotate(${kiss.rotation}deg)`
+              }}
+            >
+              💋
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Big kiss overlay */}
+      {showBigKiss && (
+        <div className="big-kiss-overlay">
+          <div className="big-kiss">💋</div>
+        </div>
+      )}
+
+      {/* Temporary kiss overlay */}
       {showKisses && (
         <div className="kiss-overlay">
-          {[...Array(20)].map((_, i) => (
+          {[...Array(10)].map((_, i) => (
             <div key={i} className="kiss-mark" style={{
               left: Math.random() * 100 + '%',
               top: Math.random() * 100 + '%',
-              animationDelay: Math.random() * 2 + 's'
+              animationDelay: Math.random() * 0.5 + 's'
             }}>💋</div>
           ))}
         </div>
@@ -93,9 +210,11 @@ function App() {
           <span className="sparkle sparkle-4">✨</span>
         </div>
         
-        <h1 className="main-title">
-          Happy Birthday, My Love ❤️
+        <h1 className="main-title"><br/>
+          Happy Birthday, My Love <br/>
+          07/09/2004 <br/><br/><br /><br /><br />
         </h1>
+
         
         <div className="birthday-cake">
           <div className="cake-emoji">🎂</div>
@@ -144,59 +263,29 @@ function App() {
         </div>
       </section>
 
-      {/* Memories Gallery */}
-      <section className="memories-section">
-        <h2>Our Beautiful Memories 📸</h2>
-        <div className="photo-gallery">
-          <div className="photo-frame">
-            <div className="photo photo-1">
-              <div className="photo-placeholder">📷</div>
-            </div>
-            <div className="photo-caption">Our First Date</div>
-          </div>
-          <div className="photo-frame">
-            <div className="photo photo-2">
-              <div className="photo-placeholder">📷</div>
-            </div>
-            <div className="photo-caption">The Day You Made Me Laugh All Day</div>
-          </div>
-          <div className="photo-frame">
-            <div className="photo photo-3">
-              <div className="photo-placeholder">📷</div>
-            </div>
-            <div className="photo-caption">Unforgettable Trip</div>
-          </div>
-          <div className="photo-frame">
-            <div className="photo photo-4">
-              <div className="photo-placeholder">📷</div>
-            </div>
-            <div className="photo-caption">Perfect Moment Together</div>
-          </div>
-        </div>
-      </section>
-
       {/* Surprise Section */}
       <section className="surprise-section">
-        <button 
-          className={`surprise-btn ${showSurprise ? 'opened' : ''}`}
-          onClick={handleSurprise}
-        >
-          <span className="gift-box">🎁</span>
-          <span className="btn-text">Click for a Surprise!</span>
-        </button>
+        {!showSurprise && (
+          <button 
+            className={`surprise-btn ${showSurprise ? 'opened' : ''}`}
+            onClick={handleSurprise}
+          >
+            <span className="gift-box">🎁</span>
+            <span className="btn-text">Click for a Surprise!</span>
+          </button>
+        )}
         
         {showSurprise && (
           <div className="surprise-content">
-            <div className="surprise-explosion">
-              {[...Array(20)].map((_, i) => (
-                <span key={i} className={`explosion-particle particle-${i}`}>
-                  {['💖', '⭐', '✨', '💕', '🎉'][i % 5]}
-                </span>
-              ))}
+            <div className="surprise-gif-container">
+              <img 
+                src="/test.gif" 
+                alt="Surprise GIF" 
+                className="surprise-gif"
+              />
             </div>
             <div className="surprise-message">
-              <h3>You're my greatest gift! 🎁💖</h3>
-              <p>Every day with you is a celebration!</p>
+              <h3>I am your surprise</h3>
             </div>
           </div>
         )}
@@ -219,7 +308,7 @@ function App() {
       {/* Ending Section */}
       <section className="ending-section">
         <div className="final-message">
-          <h2>Once again… Happy Birthday, My Beautiful Girlfriend 💖</h2>
+          <h2>Once again… Happy Birthday, My Beautiful Girl 💖</h2>
           <p>I love you today, tomorrow, and forever.</p>
           
           <div className="floating-hearts">
@@ -229,7 +318,7 @@ function App() {
           </div>
           
           <button className="kiss-btn" onClick={sendKisses}>
-            Click to Kiss 💋
+            {kissButtonText}
           </button>
         </div>
       </section>
@@ -237,7 +326,7 @@ function App() {
       {/* Music control */}
       <button 
         className="music-control"
-        onClick={() => setPlayingMusic(!playingMusic)}
+        onClick={toggleMusic}
       >
         {playingMusic ? '🔇' : '🎵'}
       </button>
