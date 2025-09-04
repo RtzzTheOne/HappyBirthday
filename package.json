@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A beautiful, romantic birthday website for your girlfriend",
   "private": true,
-  "homepage": ".",
+  "homepage": "https://yourusername.github.io/happybirthday",
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -14,7 +14,9 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "vercel-build": "npm run build"
+    "vercel-build": "npm run build",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": [
@@ -34,7 +36,15 @@
       "last 1 safari version"
     ]
   },
-  "keywords": ["birthday", "romantic", "love", "celebration"],
+  "keywords": [
+    "birthday",
+    "romantic",
+    "love",
+    "celebration"
+  ],
   "author": "Your Name",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
+  }
 }
