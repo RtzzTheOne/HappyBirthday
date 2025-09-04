@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A beautiful, romantic birthday website for your girlfriend",
   "private": true,
-  "homepage": "https://yourusername.github.io/happybirthday",
+  "homepage": "https://RtzzTheOne.github.io/happybirthday",
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
